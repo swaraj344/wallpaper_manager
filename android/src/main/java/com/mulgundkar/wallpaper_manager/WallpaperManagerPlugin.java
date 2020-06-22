@@ -11,6 +11,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Environment;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,12 +75,21 @@ public class WallpaperManagerPlugin implements FlutterPlugin, MethodCallHandler 
   private int setWallpaperFromFile(String filePath, int wallpaperLocation){
     int result = -1;
     Bitmap bitmap = BitmapFactory.decodeFile(filePath);
-    WallpaperManager wm = null;
+//    ------------ my custom code--------
+    WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    DisplayMetrics metrics = new DisplayMetrics();
+    windowManager.getDefaultDisplay().getMetrics(metrics);
+    int height = metrics.heightPixels;
+    int width = metrics.widthPixels;
+    Bitmap bitmap2 = Bitmap.createScaledBitmap(bitmap, width, height, true);
+    WallpaperManager wallpaperManager = WallpaperManager.getInstance(context);
+    wallpaperManager.setWallpaperOffsetSteps(1, 1);
+    wallpaperManager.suggestDesiredDimensions(width, height);
+//    --------------end------------------
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ECLAIR) {
-      wm = WallpaperManager.getInstance(context);
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
         try {
-          result = wm.setBitmap(bitmap, null, false, wallpaperLocation);
+          result = wallpaperManager.setBitmap(bitmap2, null, false, wallpaperLocation);
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -86,7 +97,6 @@ public class WallpaperManagerPlugin implements FlutterPlugin, MethodCallHandler 
     }
     return result;
   }
-
   @SuppressLint("MissingPermission")
   private int setWallpaperFromAsset(String assetPath, int wallpaperLocation) {
     InputStream fd = null;
